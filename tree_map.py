@@ -132,9 +132,9 @@ class TreeNode:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="CSVの内容を系統樹上にマッピングしてPNGを作成する")
+    parser = argparse.ArgumentParser(description="CSVの内容を系統樹上にマッピングして画像を作成する")
     parser.add_argument("input_csv", help="入力CSV (phylum, class, ...)")
-    parser.add_argument("output_png", help="出力PNGファイル名")
+    parser.add_argument("output_png", help="出力ファイル名(png/pdf)")
     parser.add_argument(
         "--taxdump",
         default="./taxdump",
@@ -152,19 +152,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--m", dest="monera", action="store_true", help="Moneraのみを対象にする")
     parser.add_argument(
         "--taxon",
+        "--t",
         dest="taxon_names",
         action="append",
         help="特定の分類群名(phylum/class/order)のみを対象にする（複数指定可、カンマ区切り可）",
     )
     parser.add_argument(
         "--depth",
+        "--d",
+        dest="depth",
         choices=["class", "order", "family"],
         help="どの分類階級まで描画するかを指定する",
     )
     parser.add_argument(
         "--accession2taxid",
+        "--acc2taxid",
+        dest="accession2taxid",
         default="./accession2taxid/nucl_gb.accession2taxid",
-        help="アクセッション→taxid対応表（存在確認のみ）",
+        help="アクセッション→taxid対応表またはディレクトリ（存在確認のみ）",
     )
     return parser.parse_args()
 
