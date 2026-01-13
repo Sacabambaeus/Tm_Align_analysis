@@ -606,13 +606,17 @@ def scale_value(value: float, lower: float, upper: float, size_min: float, size_
 
 
 def assign_coordinates(root: TreeNode, y_step: float) -> None:
-    x_step = 16.0
-    base_x = 0.4 + 2.0
-    root_x = base_x - x_step
-
+# 1. 【移動】先に leaves を定義する
     leaves = collect_leaves(root)
     if not leaves:
         return
+    x_step = 16.0
+    base_x = 0.4 + 2.0
+    if len(leaves) < 100:
+        root_x = base_x - x_step * 0.05 * len(leaves)
+    else:
+        root_x = base_x - x_step
+
 
     phylum_children = sorted(root.children.values(), key=lambda c: c.name)
     gap_mult = 12.0  # 主要な系統間の余白（縦方向広め）
