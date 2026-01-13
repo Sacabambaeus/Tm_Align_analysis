@@ -454,54 +454,88 @@ def filter_by_taxon_names(
     taxid_to_name: Dict[int, str],
 ) -> pd.DataFrame:
     """
-    phylum/class/order名によるフィルター（大文字小文字無視）。該当列が空でもtaxdumpから判定する。
+    --taxon (--t) で指定された分類群名に対応する TaxID を特定し、
+    その子孫（descendants）に含まれる行のみを抽出する。
     """
     if not taxon_filters:
         return df
 
-    target_set = set(taxon_filters)
+    # 1. 指定された名前(文字列)を TaxID のセットに変換する
+    target_taxids = set()
+    for name in taxon_filters:
+        # main側で小文字化(normalize)されている前提
+        tids = name_to_taxids.get(name, [])
+        if not tids:
+            print(f"[warn] 指定された分類群名 '{name}' が names.dmp に見つかりません。")
+            continue
+        target_taxids.update(tids)
+
+    if not target_taxids:
+        # 指定した名前がすべて見つからなかった場合
+        raise ValueError("指定された分類群名が taxdump 内に一つも見つかりませんでした。")
+
     kept_rows = []
     skipped_unknown = 0
     skipped_mismatch = 0
+    
+    # 高速化のためのメモ化 (TaxID -> Targetの子孫かどうか(bool))
+    memo_verdict: Dict[int, bool] = {}
 
     for _, row in df.iterrows():
-        resolved: List[str] = []
-        for rank in ("phylum", "class", "order"):
-            val = row.get(rank)
-            if isinstance(val, str) and val.strip():
-                resolved.append(val.strip().lower())
-            elif not pd.isna(val):
-                txt = str(val).strip().lower()
-                if txt:
-                    resolved.append(txt)
-
-        if not resolved:
-            tid = determine_row_taxid(row, RANK_ORDER, name_to_taxids, taxid_to_parent_rank)
-            if tid is not None:
-                lineage = get_lineage_ranks(tid, taxid_to_parent_rank, taxid_to_name)
-                for rank in ("phylum", "class", "order"):
-                    name = lineage.get(rank, "")
-                    if name:
-                        resolved.append(name.lower())
-
-        if not resolved:
+        # 行の TaxID を特定 (CSVのランク列などから解決)
+        tid = determine_row_taxid(row, RANK_ORDER, name_to_taxids, taxid_to_parent_rank)
+        
+        if tid is None:
             skipped_unknown += 1
             continue
 
-        if any(r in target_set for r in resolved):
-            kept_rows.append(row)
+        # 親を遡って target_taxids に含まれるかチェック
+        current = tid
+        match = False
+        path = [] # 判定待ちの経路
+        
+        while current is not None:
+            # すでに判定済みのIDなら結果を利用
+            if current in memo_verdict:
+                match = memo_verdict[current]
+                break
+            
+            # ターゲット（指定された分類群）に到達したか
+            if current in target_taxids:
+                match = True
+                break
+            
+            path.append(current)
+            
+            # 親へ移動
+            if current not in taxid_to_parent_rank:
+                 break
+            parent, _ = taxid_to_parent_rank[current]
+            if parent == current: # root到達
+                break
+            current = parent
+        
+        # 結果をキャッシュに保存 & 行の採用判定
+        if match:
+             # ヒットした場合、そこに至る経路(path)のIDはすべて「ターゲットの子孫」なのでTrue
+             for p in path:
+                 memo_verdict[p] = True
+             kept_rows.append(row)
         else:
-            skipped_mismatch += 1
+             # Rootまで辿ってダメだった場合、経路上のIDはすべてFalse
+             for p in path:
+                 memo_verdict[p] = False
+             skipped_mismatch += 1
 
     if not kept_rows:
-        raise ValueError("指定された分類群が見つかりませんでした。綴りとtaxdumpを確認してください。")
+        raise ValueError("指定された分類群(--taxon)に含まれる行がCSVにありませんでした。")
 
     if skipped_unknown:
-        print(f"[warn] 分類群が特定できず除外した行: {skipped_unknown}")
+        print(f"[warn] 行のTaxIDを特定できず除外: {skipped_unknown} 件")
     if skipped_mismatch:
-        print(f"[info] 分類群フィルターと合わず除外した行: {skipped_mismatch}")
-    return pd.DataFrame(kept_rows)
+        print(f"[info] フィルター条件外のため除外: {skipped_mismatch} 件")
 
+    return pd.DataFrame(kept_rows)
 
 def build_tree(
     df: pd.DataFrame,
