@@ -122,6 +122,9 @@ python3 tree_map.py /path/to/input.csv /path/to/output.pdf \
 
 ####出力される図(系統樹)
 ###プライマーはMiFish-U
+<img width="877" height="703" alt="スクリーンショット (55)" src="https://github.com/user-attachments/assets/c63320ee-66b7-4eaf-a2d7-8a77b95375cd" />
+
+
 
 
 
