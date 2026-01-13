@@ -1,6 +1,6 @@
 # TmAlign Taxonomy Analyzer & Tree Mapper
 
-**TmAlign — Local Duplex Stability Search** の解析結果を整理し、csv形式で出力するツールセットです。
+**TmAlign — Local Duplex Stability Search** (https://github.com/c2997108/TmAlign) の解析結果を整理し、csv形式で出力するツールセットです。
 さらに、作成されたcsvファイルから、プライマーの有効性を図示する系統樹を作成します。
 
 ## 📌 目的 (Purpose)
@@ -10,6 +10,15 @@
 ## 📦 必要要件 (Requirements)
 
 * **Python 3.9+** (Python 3.9.18で開発)
+* **必須ライブラリ:**
+  * `pandas` (データ処理用)
+  * `matplotlib` (描画用)
+  * 以下のコマンドでインストール可能です:
+    ```bash
+    pip install pandas matplotlib
+    ```
+* **NCBI Taxonomy Data** ...
+* 
 * **NCBI Taxonomy Data**
   以下のFTPサイトから2つのファイルをダウンロードし、**指定のディレクトリ構成**で配置してください。
 
@@ -80,7 +89,8 @@ python3 tree_map.py /path/to/input.csv /path/to/output.pdf \
     --taxdump /path/to/taxdump \
     --a \
     --t Actinopteri \
-    --d family
+    --d family \
+    tree_act_fam.pdf
 ```
 
 #### 2. tree_map.py のオプション
@@ -108,4 +118,19 @@ python3 tree_map.py /path/to/input.csv /path/to/output.pdf \
 | オプション | 説明 |
 | :--- | :--- |
 | `--t <名前>` | 系統樹の **根 (Root)** にする分類群を指定します。 |
+
 | `--d <階級>` | 描画する **末端 (Leaf)** の階級を指定します。<br>`class` (綱), `order` (目), `family` (科) から選択可能です。 |
+
+**出力される図(系統樹)**
+ * プライマーはMiFish-U、一部抜粋。
+ * 赤色の図形がTm値、水色の図形がidentity(単純な塩基の一致率)、円がForwardプライマー、ひし形がReverseプライマー、右端の緑色の四角形と数字は、計算に使用したレコードの数。一つのTaxIDにつき、一つのレコードとして使用。
+<img width="877" height="703" alt="スクリーンショット (55)" src="https://github.com/user-attachments/assets/c63320ee-66b7-4eaf-a2d7-8a77b95375cd" />
+
+
+
+
+
+
+
+
+
