@@ -160,7 +160,8 @@ def parse_args() -> argparse.Namespace:
         "--t",
         dest="taxon_names",
         action="append",
-        help="特定の分類群名(phylum/class/order)のみを対象にする（複数指定可、カンマ区切り可）",
+        nargs="+",
+        help="特定の分類群名(phylum/class/order)のみを対象にする（複数指定可、カンマ/空白区切り可）",
     )
     parser.add_argument(
         "--depth",
@@ -395,15 +396,20 @@ def fill_missing_ranks(
     return filled
 
 
-def normalize_taxon_filters(raw_list: Optional[List[str]]) -> List[str]:
+def normalize_taxon_filters(raw_list: Optional[List[object]]) -> List[str]:
     if not raw_list:
         return []
     normalized: List[str] = []
     for raw in raw_list:
-        for part in raw.split(","):
-            name = part.strip()
-            if name:
-                normalized.append(name.lower())
+        if isinstance(raw, (list, tuple)):
+            items = raw
+        else:
+            items = [raw]
+        for item in items:
+            for part in str(item).split(","):
+                name = part.strip()
+                if name:
+                    normalized.append(name.lower())
     return normalized
 
 
@@ -778,7 +784,7 @@ def draw_tree(
     size_min = max(size_max * 0.1, 2.0)
     bar_height = clamp(y_step * 0.4, 10.0, 80.0)
     branch_thick = clamp(y_step * 0.84, 6.0, 21.0)
-    shape_spacing = max(size_max * 1.0 + 1.0, 5.0) * 6.7
+    shape_spacing = max(size_max * 1.0 + 1.0, 5.0) * 9.0
 
     tm_range = (30.0, 65.0)
     id_range = (50.0, 100.0)
@@ -791,7 +797,7 @@ def draw_tree(
 
     label_anchor_x = blue_dx + shape_spacing + 1.5
     label_bar_gap = 2.0
-    max_bar_len = max(120.0, size_max * 20.0)
+    base_bar_len = max(120.0, size_max * 20.0)
     #tax_count barの位置
     bar_shift = 200.0
     bar_start_x = label_anchor_x + label_bar_gap + bar_shift
@@ -808,8 +814,20 @@ def draw_tree(
         if origin_num is not None:
             origin_counts.append(origin_num)
 
-    tax_scale = (min(taxid_counts), max(taxid_counts)) if taxid_counts else None
-    origin_scale = (min(origin_counts), max(origin_counts)) if origin_counts else None
+    max_tax_count = None
+    if taxid_counts or origin_counts:
+        max_tax_count = max(taxid_counts + origin_counts)
+
+    max_bar_len = base_bar_len
+    if max_tax_count is not None:
+        max_bar_len = base_bar_len * max(1.0, math.log10(max_tax_count + 1.0))
+
+    if max_tax_count is not None:
+        tax_scale = (0.0, max_tax_count) if taxid_counts else None
+        origin_scale = (0.0, max_tax_count) if origin_counts else None
+    else:
+        tax_scale = None
+        origin_scale = None
 
     # 【設定】 0.5 = 平方根(ルート)。 1.0 = そのまま(リニア)。
     # 数値を大きくするほど(0.6, 0.7...)、差が強調されて棒の長さの差が激しくなります。
