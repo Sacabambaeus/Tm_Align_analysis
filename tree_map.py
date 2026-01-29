@@ -1014,10 +1014,11 @@ def draw_tree(
     id_range = (50.0, 100.0)
 
     tree_end_x = max((leaf.x for leaf in leaves), default=2.0)
+    # 図形の並び順: q1_tm, q2_tm, q1_identity, q2_identity
     red_cx = tree_end_x * 1.2
-    blue_cx = red_cx + shape_spacing
-    red_dx = blue_cx + shape_spacing
-    blue_dx = red_dx + shape_spacing
+    red_dx = red_cx + shape_spacing
+    blue_cx = red_dx + shape_spacing
+    blue_dx = blue_cx + shape_spacing
 
     label_anchor_x = blue_dx + shape_spacing + 1.5
     label_bar_gap = 2.0
@@ -1156,21 +1157,6 @@ def draw_tree(
                     zorder=10,
                 )
 
-            val_q1_identity = parse_numeric(row.get("mean_q1_identity"))
-            if val_q1_identity is not None:
-                blue_diam = scale_value(val_q1_identity, id_range[0], id_range[1], size_min, size_max)
-                ax.scatter(
-                    blue_cx,
-                    y,
-                    s=(blue_diam * scatter_scale) ** 2.1,
-                    marker="o",
-                    color="cyan",
-                    alpha=1.0,
-                    edgecolors="#696969",
-                    linewidths=0.8,
-                    zorder=10,
-                )
-
             val_q2_tm = parse_numeric(row.get("mean_q2_Tm"))
             if val_q2_tm is not None:
                 red_diag = scale_value(val_q2_tm, tm_range[0], tm_range[1], size_min, size_max)
@@ -1181,6 +1167,21 @@ def draw_tree(
                     s=(red_diag * scatter_scale) ** 2,
                     marker="D",
                     color="#e74c3c",
+                    alpha=1.0,
+                    edgecolors="#696969",
+                    linewidths=0.8,
+                    zorder=10,
+                )
+
+            val_q1_identity = parse_numeric(row.get("mean_q1_identity"))
+            if val_q1_identity is not None:
+                blue_diam = scale_value(val_q1_identity, id_range[0], id_range[1], size_min, size_max)
+                ax.scatter(
+                    blue_cx,
+                    y,
+                    s=(blue_diam * scatter_scale) ** 2.1,
+                    marker="o",
+                    color="cyan",
                     alpha=1.0,
                     edgecolors="#696969",
                     linewidths=0.8,
@@ -1214,10 +1215,10 @@ def draw_tree(
 
             if val_q1_tm is not None:
                 ax.text(red_cx, y - text_offset_y, f"{val_q1_tm:.2f}", **text_kwargs)
-            if val_q1_identity is not None:
-                ax.text(blue_cx, y - text_offset_y, f"{val_q1_identity:.2f}", **text_kwargs)
             if val_q2_tm is not None:
                 ax.text(red_dx, y - text_offset_y, f"{val_q2_tm:.2f}", **text_kwargs)
+            if val_q1_identity is not None:
+                ax.text(blue_cx, y - text_offset_y, f"{val_q1_identity:.2f}", **text_kwargs)
             if val_q2_identity is not None:
                 ax.text(blue_dx, y - text_offset_y, f"{val_q2_identity:.2f}", **text_kwargs)
 
